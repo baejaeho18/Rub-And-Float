@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rub and Float Demo</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <h1>Rub-and-Float Demo</h1>
+
+  <p>텍스트 일부를 문지르면 floating 창이 생깁니다. 예: <strong>이 부분을 마우스로 여러 번 왔다갔다 해보세요.</strong></p>
+
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBo3KG-N158754LfiIWsUB3HBNh_ETg2NbyQ&s" alt="샘플 이미지" class="rub-target" />
+
+  <table border="1" class="rub-target">
+    <tr><th>이름</th><th>나이</th></tr>
+    <tr><td>홍길동</td><td>30</td></tr>
+    <tr><td>김철수</td><td>25</td></tr>
+  </table>
+
+  <p class="math rub-target">\( E = mc^2 \)</p>
+
+  <script src="rub-and-float.js"></script>
+</body>
+</html>

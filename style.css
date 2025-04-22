@@ -1,0 +1,45 @@
+body {
+  font-family: sans-serif;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+img, table, svg, math, canvas, video, .floatable {
+  max-width: 100%;
+  margin: 20px 0;
+  border: 2px solid #ddd;
+}
+
+.floating-box {
+  position: absolute;
+  top: 150px;
+  left: 150px;
+  border: 1px solid #aaa;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  resize: both;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.floating-header {
+  background: #444;
+  color: white;
+  padding: 5px 10px;
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.floating-header .close-btn {
+  cursor: pointer;
+  padding-left: 10px;
+}
+
+.floating-body {
+  padding: 10px;
+  overflow: auto;
+  height: auto;
+}
