@@ -11,6 +11,7 @@ cd Rub-And-Float
 구현하면서 Demo 버전을 확인하고 싶다면 index.html을 열어 확인한다.
 
 상용 웹페이지에서 확인하고 싶다면 chrome://extensions 에서 개발자모드 버튼을 활성화하고, "압축해제된 확장 프로그램을 로드합니다." 버튼을 클릭하여 Rub-And-Float 디렉토리를 선택한다.
+![image](https://github.com/user-attachments/assets/f4a7f663-339d-41ff-adfd-e7ad428fc317)
 
 ## What To Do
 
