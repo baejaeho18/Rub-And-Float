@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "Rub and Float",
+    "version": "1.0",
+    "description": "Select and rub to create floating popups",
+    "permissions": ["scripting", "activeTab"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": "icon.png"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["rub-and-float.js"],
+        "css": ["style.css"]
+      }
+    ]
+  }
+  

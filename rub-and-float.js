@@ -21,13 +21,63 @@ function isInSelection(el) {
   }
 }
 
-function createFloatingBox(content) {
-  const box = document.createElement('div');
-  box.className = 'floating-box';
-
+function createHeader(box) {
   const header = document.createElement('div');
   header.className = 'floating-header';
-  header.innerHTML = '<span>Floating</span><span class="close-btn">×</span>';
+
+  const leftButtons = document.createElement('div');
+  const rightButtons = document.createElement('div');
+  rightButtons.style.display = 'flex';
+  rightButtons.style.gap = '6px';
+
+  const closeBtn = document.createElement('span');
+  closeBtn.className = 'close-btn';
+  closeBtn.textContent = '×';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.addEventListener('click', () => box.remove());
+
+  const copyBtn = document.createElement('span');
+  copyBtn.className = 'close-btn';
+  copyBtn.textContent = '□';
+  copyBtn.style.cursor = 'pointer';
+  copyBtn.addEventListener('click', () => {
+    const bodyHTML = box.querySelector('.floating-body').innerHTML;
+    navigator.clipboard.writeText(bodyHTML);
+  });
+
+  const saveBtn = document.createElement('span');
+  saveBtn.className = 'close-btn';
+  saveBtn.textContent = '↓';
+  saveBtn.style.cursor = 'pointer';
+  saveBtn.addEventListener('click', () => {
+    const bodyHTML = box.querySelector('.floating-body').innerHTML;
+    const blob = new Blob([bodyHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '내용.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  rightButtons.appendChild(copyBtn);
+  rightButtons.appendChild(saveBtn);
+  rightButtons.appendChild(closeBtn);
+
+  header.appendChild(leftButtons);   // 나중에 원본 페이지 버튼 넣기 좋음
+  header.appendChild(rightButtons);
+
+  return header;
+}
+
+function createFloatingBox(content, x, y) {
+  const box = document.createElement('div');
+  box.className = 'floating-box';
+  box.style.position = 'fixed';
+  box.style.left = `${x}px`;
+  box.style.top = `${y}px`;
+
+  const header = createHeader(box);
   box.appendChild(header);
 
   const body = document.createElement('div');
@@ -37,22 +87,21 @@ function createFloatingBox(content) {
 
   document.body.appendChild(box);
 
-  // 초기 크기 설정
   requestAnimationFrame(() => {
     const bodyRect = body.getBoundingClientRect();
     box.style.width = `${bodyRect.width + 2}px`;
     box.style.height = `${header.offsetHeight + bodyRect.height + 2}px`;
   });
 
-  // 이동 기능
+  // 이동 기능 (fixed 유지)
   let offsetX = 0, offsetY = 0;
   header.addEventListener('mousedown', (e) => {
-    offsetX = e.clientX - box.offsetLeft;
-    offsetY = e.clientY - box.offsetTop;
+    offsetX = e.clientX - box.getBoundingClientRect().left;
+    offsetY = e.clientY - box.getBoundingClientRect().top;
 
     function move(e) {
-      box.style.left = (e.clientX - offsetX) + 'px';
-      box.style.top = (e.clientY - offsetY) + 'px';
+      box.style.left = `${e.clientX - offsetX}px`;
+      box.style.top = `${e.clientY - offsetY}px`;
     }
 
     document.addEventListener('mousemove', move);
@@ -66,11 +115,9 @@ function createFloatingBox(content) {
     box.remove();
   });
 
-  box.addEventListener('mousedown', (e) => {
-    e.stopPropagation();
-  });
+  box.addEventListener('mousedown', (e) => e.stopPropagation());
 
-  // body를 드래그하여 resize
+  // 드래그로 resize
   body.addEventListener('mousedown', (e) => {
     e.stopPropagation();
     const startX = e.clientX;
@@ -87,11 +134,10 @@ function createFloatingBox(content) {
       box.style.height = `${newHeight}px`;
       body.style.height = `${newHeight - header.offsetHeight}px`;
 
-      // 콘텐츠 크기 조정 (scale 적용)
       const scaleX = newWidth / startWidth;
       const scaleY = newHeight / startHeight;
       body.style.transform = `scale(${scaleX}, ${scaleY})`;
-      body.style.transformOrigin = 'top left';  // scale 기준점 설정
+      body.style.transformOrigin = 'top left';
     }
 
     document.addEventListener('mousemove', resize);
@@ -116,16 +162,17 @@ document.addEventListener('mousemove', (e) => {
     rubCount++;
     if (rubCount >= rubThreshold) {
       isMouseDown = false;
+
       const sel = window.getSelection();
       const selectedText = sel && !sel.isCollapsed && isInSelection(targetElement)
         ? sel.toString()
         : null;
 
       if (selectedText) {
-        createFloatingBox(`<p>${selectedText}</p>`);
+        createFloatingBox(`<p>${selectedText}</p>`, e.clientX, e.clientY);
       } else if (targetElement) {
         const clone = targetElement.cloneNode(true);
-        createFloatingBox(clone.outerHTML);
+        createFloatingBox(clone.outerHTML, e.clientX, e.clientY);
       }
     }
   }
