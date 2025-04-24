@@ -39,7 +39,8 @@ img, table, svg, math, canvas, video, .floatable {
 }
 
 .floating-body {
-  padding: 10px;
-  overflow: auto;
+  padding: 5px;
+  overflow: hidden;
   height: auto;
+  transform-origin: top left;
 }

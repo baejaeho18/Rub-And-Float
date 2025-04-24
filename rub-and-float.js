@@ -21,63 +21,120 @@ function isInSelection(el) {
   }
 }
 
-function createHeader(box) {
+function createHeader(box, parentElement) {
   const header = document.createElement('div');
   header.className = 'floating-header';
-
+  header.style.position = 'relative'
+  
   const leftButtons = document.createElement('div');
+  leftButtons.style.display = 'flex';
+  leftButtons.style.gap = '6px';
   const rightButtons = document.createElement('div');
   rightButtons.style.display = 'flex';
   rightButtons.style.gap = '6px';
 
+  const moveToPageBtn = document.createElement('span');
+  moveToPageBtn.className = 'move-to-page-btn';
+  moveToPageBtn.textContent = '<';
+  moveToPageBtn.style.cursor = 'pointer';
+  moveToPageBtn.addEventListener('click', () => {
+    if (box && parentElement) {
+      parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+  leftButtons.appendChild(moveToPageBtn)
+
   const closeBtn = document.createElement('span');
   closeBtn.className = 'close-btn';
-  closeBtn.textContent = '×';
+  closeBtn.textContent = 'x';
   closeBtn.style.cursor = 'pointer';
   closeBtn.addEventListener('click', () => box.remove());
 
   const copyBtn = document.createElement('span');
-  copyBtn.className = 'close-btn';
-  copyBtn.textContent = '□';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = '□ ';
   copyBtn.style.cursor = 'pointer';
-  copyBtn.addEventListener('click', () => {
-    const bodyHTML = box.querySelector('.floating-body').innerHTML;
-    navigator.clipboard.writeText(bodyHTML);
+  copyBtn.addEventListener('click', async () => {
+    const body = box.querySelector('.floating-body');
+  
+    // 1. 이미지 복사 시도
+    const img = body.querySelector('img');
+    if (img && img.src) {
+      try {
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+        await navigator.clipboard.write([clipboardItem]);
+        return;
+      } catch (err) {
+        console.error('이미지 복사 실패:', err);
+      }
+    }
+  
+    // 2. 텍스트 복사
+    const text = body.innerText || body.textContent;
+    if (text.trim()) {
+      try {
+        await navigator.clipboard.writeText(text.trim());
+      } catch (err) {
+        console.error('텍스트 복사 실패:', err);
+      }
+    }
   });
 
   const saveBtn = document.createElement('span');
-  saveBtn.className = 'close-btn';
+  saveBtn.className = 'save-btn';
   saveBtn.textContent = '↓';
   saveBtn.style.cursor = 'pointer';
   saveBtn.addEventListener('click', () => {
-    const bodyHTML = box.querySelector('.floating-body').innerHTML;
-    const blob = new Blob([bodyHTML], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '내용.html';
-    a.click();
-    URL.revokeObjectURL(url);
+    const body = box.querySelector('.floating-body');
+    const bodyHTML = body.innerHTML;
+  
+    // 콘텐츠가 이미지일 경우
+    const img = body.querySelector('img');
+    if (img && img.src) {
+      const extension = img.src.split('.').pop();  // 이미지 확장자 추출
+      const blob = new Blob([bodyHTML], { type: 'image/' + extension });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `image.${extension}`;  // 이미지 파일로 저장
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+  
+    // 텍스트일 경우 HTML 확장자
+    const text = body.innerText || body.textContent;
+    if (text.trim()) {
+      const blob = new Blob([bodyHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'content.txt';  
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   });
 
   rightButtons.appendChild(copyBtn);
   rightButtons.appendChild(saveBtn);
   rightButtons.appendChild(closeBtn);
 
-  header.appendChild(leftButtons);   // 나중에 원본 페이지 버튼 넣기 좋음
+  header.appendChild(leftButtons);
   header.appendChild(rightButtons);
 
   return header;
 }
 
-function createFloatingBox(content, x, y) {
+function createFloatingBox(content, x, y, parentElement) {
   const box = document.createElement('div');
   box.className = 'floating-box';
   box.style.position = 'fixed';
   box.style.left = `${x}px`;
   box.style.top = `${y}px`;
 
-  const header = createHeader(box);
+  const header = createHeader(box, parentElement);
   box.appendChild(header);
 
   const body = document.createElement('div');
@@ -92,6 +149,29 @@ function createFloatingBox(content, x, y) {
     box.style.width = `${bodyRect.width + 2}px`;
     box.style.height = `${header.offsetHeight + bodyRect.height + 2}px`;
   });
+
+  const defaultWidth = 300;
+  const defaultHeight = 200;
+  
+  box.style.width = `${defaultWidth}px`;
+  box.style.height = `${header.offsetHeight + defaultHeight}px`;
+  
+  const resizeObserver = new ResizeObserver(() => {
+    const boxRect = box.getBoundingClientRect();
+    const body = box.querySelector('.floating-body');
+  
+    const scaleX = boxRect.width / defaultWidth;
+    const scaleY = (boxRect.height - header.offsetHeight) / defaultHeight;
+    const scale = Math.min(scaleX, scaleY);
+  
+    // ▶ 커질 때만 scale 적용
+    if (scale > 1) {
+      body.style.transform = `scale(${scale})`;
+    } else {
+      body.style.transform = `scale(1)`;  // 그대로 두기
+    }
+  });
+  resizeObserver.observe(box);
 
   // 이동 기능 (fixed 유지)
   let offsetX = 0, offsetY = 0;
@@ -116,35 +196,6 @@ function createFloatingBox(content, x, y) {
   });
 
   box.addEventListener('mousedown', (e) => e.stopPropagation());
-
-  // 드래그로 resize
-  body.addEventListener('mousedown', (e) => {
-    e.stopPropagation();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = box.offsetWidth;
-    const startHeight = box.offsetHeight;
-
-    function resize(e) {
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      const newWidth = startWidth + dx;
-      const newHeight = startHeight + dy;
-      box.style.width = `${newWidth}px`;
-      box.style.height = `${newHeight}px`;
-      body.style.height = `${newHeight - header.offsetHeight}px`;
-
-      const scaleX = newWidth / startWidth;
-      const scaleY = newHeight / startHeight;
-      body.style.transform = `scale(${scaleX}, ${scaleY})`;
-      body.style.transformOrigin = 'top left';
-    }
-
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', () => {
-      document.removeEventListener('mousemove', resize);
-    }, { once: true });
-  });
 }
 
 document.addEventListener('mousedown', (e) => {
@@ -169,10 +220,10 @@ document.addEventListener('mousemove', (e) => {
         : null;
 
       if (selectedText) {
-        createFloatingBox(`<p>${selectedText}</p>`, e.clientX, e.clientY);
+        createFloatingBox(`<p>${selectedText}</p>`, e.clientX, e.clientY, targetElement);
       } else if (targetElement) {
         const clone = targetElement.cloneNode(true);
-        createFloatingBox(clone.outerHTML, e.clientX, e.clientY);
+        createFloatingBox(clone.outerHTML, e.clientX, e.clientY, targetElement);
       }
     }
   }
