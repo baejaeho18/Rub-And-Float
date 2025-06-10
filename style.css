@@ -1,4 +1,4 @@
-body {
+/* body {
   font-family: sans-serif;
   line-height: 1.6;
   padding: 20px;
@@ -8,7 +8,7 @@ img, table, svg, math, canvas, video, .floatable {
   max-width: 100%;
   margin: 20px 0;
   border: 2px solid #ddd;
-}
+} */
 
 .floating-box {
   position: absolute;
@@ -33,14 +33,18 @@ img, table, svg, math, canvas, video, .floatable {
   user-select: none;
 }
 
-.floating-header .close-btn {
-  cursor: pointer;
-  padding-left: 10px;
-}
-
 .floating-body {
   padding: 5px;
   overflow: hidden;
   height: auto;
   transform-origin: top left;
+}
+
+
+.floating-body img,
+.floating-body video,
+.floating-body iframe {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }

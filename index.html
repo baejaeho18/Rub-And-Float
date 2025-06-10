@@ -11,7 +11,7 @@
 <body>
   <h1>Rub-and-Float Demo</h1>
 
-  <p>텍스트 일부를 문지르면 floating 창이 생깁니다. 예: <strong>이 부분을 마우스로 여러 번 왔다갔다 해보세요.</strong></p>
+  <p>텍스트 일부를 문지르면 floating 창이 생깁니다. 예: <strong>이 부분을 마우스로 여러 번 왔다갔다 해보세요.</strong><a href="#ref1">[1]</a></p>
 
   <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBo3KG-N158754LfiIWsUB3HBNh_ETg2NbyQ&s" alt="샘플 이미지" class="rub-target" />
 
@@ -21,7 +21,22 @@
     <tr><td>김철수</td><td>25</td></tr>
   </table>
 
-  <p class="math rub-target">\( E = mc^2 \)</p>
+  <p class="math rub-target">\( E = mc^2 \)<a href="#ref2">[2]</a></p>
+
+  <h2>References</h2>
+  <ul>
+    <li id="ref1">[1] <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Introduction" target="_blank">JavaScript Guide - MDN Web Docs</a></li>
+    <li id="ref2">[2] <a href="https://www.mathjax.org/" target="_blank">MathJax Official Site</a></li>
+    <li id="ref3">[3] <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView" target="_blank">scrollIntoView API - MDN Web Docs</a></li>
+    <li id="ref4">[4] <a href="https://www.polyfill.io/v3/" target="_blank">Polyfill.io Official Site</a></li>
+  </ul>
+
+  <h2>Links</h2>
+  <ul>
+    <li><a href="https://github.com/MathJax/MathJax" target="_blank">MathJax GitHub Repository</a></li>
+    <li><a href="https://github.com/webplatform/Polyfills" target="_blank">Polyfill GitHub Repository</a></li>
+    <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML" target="_blank">HTML Documentation - MDN Web Docs</a></li>
+  </ul>
 
   <script src="rub-and-float.js"></script>
 </body>

@@ -1,31 +1,11 @@
-let isMouseDown = false;
-let startX = 0;
-let lastX = 0;
-let rubCount = 0;
-let targetElement = null;
-const rubThreshold = 4;
-
-function getSelectedTextRange() {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
-  return sel.getRangeAt(0);
-}
-
-function isInSelection(el) {
-  const range = getSelectedTextRange();
-  if (!range) return false;
-  try {
-    return range.intersectsNode(el);
-  } catch {
-    return false;
-  }
-}
+// floating-box.js
+const floatingBoxes = [];
 
 function createHeader(box, parentElement) {
   const header = document.createElement('div');
   header.className = 'floating-header';
-  header.style.position = 'relative'
-  
+  header.style.position = 'relative';
+
   const leftButtons = document.createElement('div');
   leftButtons.style.display = 'flex';
   leftButtons.style.gap = '6px';
@@ -35,29 +15,31 @@ function createHeader(box, parentElement) {
 
   const moveToPageBtn = document.createElement('span');
   moveToPageBtn.className = 'move-to-page-btn';
-  moveToPageBtn.textContent = '<';
+  moveToPageBtn.textContent = '↩';
   moveToPageBtn.style.cursor = 'pointer';
   moveToPageBtn.addEventListener('click', () => {
     if (box && parentElement) {
       parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
-  leftButtons.appendChild(moveToPageBtn)
+  leftButtons.appendChild(moveToPageBtn);
 
   const closeBtn = document.createElement('span');
   closeBtn.className = 'close-btn';
-  closeBtn.textContent = 'x';
+  closeBtn.textContent = '🗙';
   closeBtn.style.cursor = 'pointer';
-  closeBtn.addEventListener('click', () => box.remove());
+  closeBtn.addEventListener('click', () => {
+    box.remove();
+    const index = floatingBoxes.indexOf(box);
+    if (index !== -1) floatingBoxes.splice(index, 1);
+  });
 
   const copyBtn = document.createElement('span');
   copyBtn.className = 'copy-btn';
-  copyBtn.textContent = '□ ';
+  copyBtn.textContent = '⧉';
   copyBtn.style.cursor = 'pointer';
   copyBtn.addEventListener('click', async () => {
     const body = box.querySelector('.floating-body');
-  
-    // 1. 이미지 복사 시도
     const img = body.querySelector('img');
     if (img && img.src) {
       try {
@@ -70,8 +52,6 @@ function createHeader(box, parentElement) {
         console.error('이미지 복사 실패:', err);
       }
     }
-  
-    // 2. 텍스트 복사
     const text = body.innerText || body.textContent;
     if (text.trim()) {
       try {
@@ -84,34 +64,38 @@ function createHeader(box, parentElement) {
 
   const saveBtn = document.createElement('span');
   saveBtn.className = 'save-btn';
-  saveBtn.textContent = '↓';
+  saveBtn.textContent = '⤓';
   saveBtn.style.cursor = 'pointer';
-  saveBtn.addEventListener('click', () => {
+  saveBtn.addEventListener('click', async () => {
     const body = box.querySelector('.floating-body');
-    const bodyHTML = body.innerHTML;
-  
-    // 콘텐츠가 이미지일 경우
     const img = body.querySelector('img');
     if (img && img.src) {
-      const extension = img.src.split('.').pop();  // 이미지 확장자 추출
-      const blob = new Blob([bodyHTML], { type: 'image/' + extension });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `image.${extension}`;  // 이미지 파일로 저장
-      a.click();
-      URL.revokeObjectURL(url);
-      return;
+      try {
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const mimeType = blob.type; // 예: 'image/jpeg'
+        const extension = mimeType.split('/')[1]; // 'jpeg'
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `image.${extension}`; // 안전한 확장자 사용
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      } catch (err) {
+        console.error('이미지 저장 실패:', err);
+      }
     }
   
-    // 텍스트일 경우 HTML 확장자
+    // 텍스트 저장
+    const bodyHTML = body.innerHTML;
     const text = body.innerText || body.textContent;
     if (text.trim()) {
       const blob = new Blob([bodyHTML], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'content.txt';  
+      a.download = 'content.txt';
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -123,7 +107,6 @@ function createHeader(box, parentElement) {
 
   header.appendChild(leftButtons);
   header.appendChild(rightButtons);
-
   return header;
 }
 
@@ -139,10 +122,23 @@ function createFloatingBox(content, x, y, parentElement) {
 
   const body = document.createElement('div');
   body.className = 'floating-body';
-  body.innerHTML = content;
-  box.appendChild(body);
 
+  // ✅ URL일 경우 iframe 삽입
+  if (typeof content === 'string' && /^https?:\/\/\S+$/.test(content.trim())) {
+    const iframe = document.createElement('iframe');
+    iframe.src = content.trim();
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.loading = 'lazy';
+    body.appendChild(iframe);
+  } else {
+    body.innerHTML = content;
+  }
+
+  box.appendChild(body);
   document.body.appendChild(box);
+  floatingBoxes.push(box);
 
   requestAnimationFrame(() => {
     const bodyRect = body.getBoundingClientRect();
@@ -152,28 +148,9 @@ function createFloatingBox(content, x, y, parentElement) {
 
   const defaultWidth = 300;
   const defaultHeight = 200;
-  
   box.style.width = `${defaultWidth}px`;
   box.style.height = `${header.offsetHeight + defaultHeight}px`;
-  
-  const resizeObserver = new ResizeObserver(() => {
-    const boxRect = box.getBoundingClientRect();
-    const body = box.querySelector('.floating-body');
-  
-    const scaleX = boxRect.width / defaultWidth;
-    const scaleY = (boxRect.height - header.offsetHeight) / defaultHeight;
-    const scale = Math.min(scaleX, scaleY);
-  
-    // ▶ 커질 때만 scale 적용
-    if (scale > 1) {
-      body.style.transform = `scale(${scale})`;
-    } else {
-      body.style.transform = `scale(1)`;  // 그대로 두기
-    }
-  });
-  resizeObserver.observe(box);
 
-  // 이동 기능 (fixed 유지)
   let offsetX = 0, offsetY = 0;
   header.addEventListener('mousedown', (e) => {
     offsetX = e.clientX - box.getBoundingClientRect().left;
@@ -190,46 +167,5 @@ function createFloatingBox(content, x, y, parentElement) {
     }, { once: true });
   });
 
-  // 닫기 버튼
-  header.querySelector('.close-btn').addEventListener('click', () => {
-    box.remove();
-  });
-
   box.addEventListener('mousedown', (e) => e.stopPropagation());
 }
-
-document.addEventListener('mousedown', (e) => {
-  isMouseDown = true;
-  startX = e.clientX;
-  lastX = startX;
-  rubCount = 0;
-  targetElement = document.elementFromPoint(e.clientX, e.clientY);
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!isMouseDown) return;
-  const dx = e.clientX - lastX;
-  if (Math.sign(dx) !== Math.sign(lastX - startX)) {
-    rubCount++;
-    if (rubCount >= rubThreshold) {
-      isMouseDown = false;
-
-      const sel = window.getSelection();
-      const selectedText = sel && !sel.isCollapsed && isInSelection(targetElement)
-        ? sel.toString()
-        : null;
-
-      if (selectedText) {
-        createFloatingBox(`<p>${selectedText}</p>`, e.clientX, e.clientY, targetElement);
-      } else if (targetElement) {
-        const clone = targetElement.cloneNode(true);
-        createFloatingBox(clone.outerHTML, e.clientX, e.clientY, targetElement);
-      }
-    }
-  }
-  lastX = e.clientX;
-});
-
-document.addEventListener('mouseup', () => {
-  isMouseDown = false;
-});
