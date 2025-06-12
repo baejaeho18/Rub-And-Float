@@ -8,6 +8,7 @@ let lastY = 0;
 let rubCount = 0;
 let targetElement = null;
 const rubThreshold = 4;
+const minMove = 10;
 let dragTargetBox = null;
 
 function getSelectedTextRange() {
@@ -64,6 +65,7 @@ document.addEventListener('mousemove', (e) => {
   if (!isMouseDown || ignoreRub) return;
 
   const dx = e.clientX - lastX;
+  if (Math.abs(dx) < minMove) return;
   if (Math.sign(dx) !== Math.sign(lastX - startX)) {
     rubCount++;
     if (rubCount >= rubThreshold) {
@@ -98,4 +100,7 @@ document.addEventListener('mouseup', () => {
   isDraggingHeader = false;
   dragTargetBox = null;
   ignoreRub = false;
+  rubCount = 0;
+  startX = 0;
+  lastX = 0;
 });
